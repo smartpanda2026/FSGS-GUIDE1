@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FSGS Dx & Tx · Interactive Decision Aid</title>
+<style>
+  * { box-sizing: border-box; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
+  body { background: #f0f6fc; margin: 0; padding: 20px; color: #0b2b4a; }
+  .wrap { max-width: 1200px; margin: 0 auto; background: #fff; border-radius: 20px; padding: 24px; box-shadow: 0 10px 40px rgba(0,40,80,.12); }
+  h1 { font-size: 26px; margin: 0 0 4px; color: #074072; }
+  .sub { color: #3e6b96; border-bottom: 2px solid #d0e2f5; padding-bottom: 14px; margin-bottom: 20px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; align-items: center; }
+  .toggle { background: #e3eefc; border-radius: 30px; padding: 4px; display: inline-flex; border: 1px solid #bed9f5; }
+  .toggle button { border: none; background: transparent; padding: 8px 22px; border-radius: 26px; font-weight: 700; font-size: 13px; cursor: pointer; color: #1e4d7a; }
+  .toggle button.active { background: #0b4b7c; color: #fff; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 850px) { .cols { grid-template-columns: 1fr; } }
+  .card { background: #fafdff; border: 1px solid #cde0f2; border-radius: 16px; padding: 18px 20px; margin-bottom: 18px; }
+  .card h2 { font-size: 17px; margin: 0 0 14px; color: #074072; border-left: 4px solid #2c7bc0; padding-left: 12px; }
+  label { display: block; font-size: 13px; font-weight: 600; color: #1e4b72; margin: 10px 0 4px; }
+  .row { display: flex; align-items: center; gap: 8px; }
+  input[type=number] { flex: 1; padding: 10px 12px; border: 1.5px solid #c2d9f0; border-radius: 10px; font-size: 15px; outline: none; }
+  input[type=number]:focus { border-color: #1f6eb0; }
+  .unit { min-width: 62px; text-align: center; font-weight: 700; font-size: 13px; color: #1b5a8c; background: #e8f1fd; padding: 8px; border-radius: 8px; }
+  .chk { display: flex; align-items: center; gap: 10px; background: #f0f7ff; border: 1px solid #cde0f2; border-radius: 10px; padding: 10px 12px; margin-top: 8px; }
+  .chk input { width: 18px; height: 18px; accent-color: #0b4b7c; flex-shrink: 0; }
+  .chk label { margin: 0; font-size: 13.5px; font-weight: 500; cursor: pointer; }
+  .go { width: 100%; padding: 16px; background: #0b4b7c; color: #fff; border: none; border-radius: 40px; font-size: 17px; font-weight: 700; cursor: pointer; margin-top: 16px; box-shadow: 0 6px 16px rgba(11,75,124,.3); }
+  .go:hover { background: #0a3e66; }
+  .go:active { transform: scale(.98); }
+  .panel { background: #eef6fe; border: 2px solid #b8d6f2; border-radius: 16px; padding: 20px; min-height: 300px; }
+  .badge { display: inline-block; padding: 6px 16px; border-radius: 20px; color: #fff; font-weight: 700; font-size: 13px; margin-bottom: 12px; }
+  .b-primary { background: #0f6b3c; }
+  .b-secondary { background: #9b4b1f; }
+  .b-genetic { background: #6a3d9a; }
+  .b-uc { background: #5a6b7a; }
+  .b-await { background: #7f9db9; }
+  .txt { font-size: 14px; line-height: 1.6; color: #143750; }
+  .txt strong { color: #074072; }
+  ul.tick { list-style: none; padding: 0; margin: 8px 0; }
+  ul.tick li { padding: 7px 0 7px 26px; background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="%230b4b7c" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>') left center no-repeat; background-size: 16px; border-bottom: 1px dashed #bed9f5; font-weight: 500; }
+  ul.tick li:last-child { border-bottom: none; }
+  .warn { background: #fff6e0; border-left: 4px solid #e6a017; padding: 12px 14px; border-radius: 8px; font-size: 13px; color: #5e3e0b; margin-top: 12px; }
+  .info { background: #e3f2fd; border-left: 4px solid #1f6eb0; padding: 12px 14px; border-radius: 8px; font-size: 13px; color: #0b3b5e; margin-top: 12px; }
+  .dose-box { background: #f8fbff; border: 1px solid #cfe2f5; border-radius: 10px; padding: 12px 14px; margin-top: 10px; }
+  .dose-box h4 { margin: 0 0 8px; font-size: 14px; color: #074072; }
+  .dose-box table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .dose-box td { padding: 6px 8px; border-bottom: 1px solid #e2eefb; vertical-align: top; }
+  .dose-box td:first-child { font-weight: 600; color: #1e4b72; width: 34%; }
+  .dose-box tr:last-child td { border-bottom: none; }
+  .stamp { font-size: 11px; color: #7f9db9; text-align: right; margin-top: 6px; }
+  .foot { font-size: 12px; color: #557da0; text-align: center; border-top: 1px solid #d0e2f5; padding-top: 14px; margin-top: 24px; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🩺 FSGS Dx &amp; Tx</h1>
+  <div class="sub">
+    <span>Interactive diagnostic &amp; treatment aid — Focal Segmental Glomerulosclerosis</span>
+    <div class="toggle">
+      <button type="button" id="btnUS" class="active" onclick="setUnit('US')">🇺🇸 US units</button>
+      <button type="button" id="btnSI" onclick="setUnit('SI')">🌍 SI units</button>
+    </div>
+  </div>
+
+  <div class="cols">
+    <!-- LEFT -->
+    <div>
+      <div class="card">
+        <h2>📋 Clinical &amp; lab parameters</h2>
+        <label>Proteinuria (24h urine protein)</label>
+        <div class="row">
+          <input type="number" id="proteinuria" value="4.2" step="0.1" min="0">
+          <span class="unit" id="proteinuriaUnit">g/d</span>
+        </div>
+        <label>Serum albumin</label>
+        <div class="row">
+          <input type="number" id="albumin" value="2.5" step="0.1" min="0">
+          <span class="unit" id="albuminUnit">g/dL</span>
+        </div>
+        <label>Serum creatinine (optional)</label>
+        <div class="row">
+          <input type="number" id="creatinine" value="1.2" step="0.1" min="0">
+          <span class="unit" id="creatinineUnit">mg/dL</span>
+        </div>
+        <label>Body weight (for weight-based dosing)</label>
+        <div class="row">
+          <input type="number" id="weight" value="70" step="1" min="1">
+          <span class="unit" id="weightUnit">kg</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>🔬 Histology / electron microscopy</h2>
+        <div class="chk"><input type="checkbox" id="footProcessDiffuse" checked><label for="footProcessDiffuse">Diffuse foot process effacement (≥80%) on EM</label></div>
+        <div class="chk"><input type="checkbox" id="fsgsLesions" checked><label for="fsgsLesions">FSGS lesions on light microscopy</label></div>
+        <div class="chk"><input type="checkbox" id="segmentalEffacement"><label for="segmentalEffacement">Segmental foot process effacement (favors secondary/genetic)</label></div>
+      </div>
+
+      <div class="card">
+        <h2>🧬 Etiology clues</h2>
+        <div class="chk"><input type="checkbox" id="familyHistory"><label for="familyHistory">Family history of glomerular disease / steroid resistance</label></div>
+        <div class="chk"><input type="checkbox" id="prematurity"><label for="prematurity">History of prematurity (maladaptive etiology)</label></div>
+        <div class="chk"><input type="checkbox" id="apol1"><label for="apol1">African ancestry / APOL1 high-risk variants</label></div>
+        <div class="chk"><input type="checkbox" id="viralDrug"><label for="viralDrug">Viral infection or drug exposure (interferon, lithium, heroin)</label></div>
+        <div class="chk"><input type="checkbox" id="obesityDiabetes"><label for="obesityDiabetes">Obesity, diabetes, or maladaptive risk factors</label></div>
+      </div>
+
+      <button type="button" class="go" id="goBtn" onclick="runDiagnosis()">▶ Evaluate &amp; Recommend</button>
+    </div>
+
+    <!-- RIGHT -->
+    <div>
+      <div class="panel" id="panel">
+        <div id="placeholder">
+          <div class="badge b-await">Awaiting input</div>
+          <div class="txt" style="color:#4b6f8c;">
+            Adjust the parameters and click <strong>Evaluate &amp; Recommend</strong> to see the suspected FSGS subtype, diagnostic reasoning, and treatment with detailed dosage schedules.
+          </div>
+        </div>
+        <div id="output" class="hidden"></div>
+        <div class="stamp" id="stamp">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">⚕️ Educational / decision-support only. Not a substitute for clinical judgment. KDIGO 2021 · KDOQI 2023.</div>
+</div>
+
+<script>
+/* ---------- STATE ---------- */
+var currentUnit = 'US';
+var vals = { proteinuria: 4.2, albumin: 2.5, creatinine: 1.2, weight: 70 };
+
+/* ---------- UNIT HANDLING ---------- */
+function readInputs() {
+  var p = parseFloat(document.getElementById('proteinuria').value) || 0;
+  var a = parseFloat(document.getElementById('albumin').value) || 0;
+  var c = parseFloat(document.getElementById('creatinine').value) || 0;
+  var w = parseFloat(document.getElementById('weight').value) || 70;
+  if (currentUnit === 'US') {
+    vals.proteinuria = p; vals.albumin = a; vals.creatinine = c; vals.weight = w;
+  } else {
+    vals.proteinuria = p / 1000;   // mg/d -> g/d
+    vals.albumin = a / 10;         // g/L -> g/dL
+    vals.creatinine = c / 88.4;    // µmol/L -> mg/dL
+    vals.weight = w;               // kg stays kg
+  }
+}
+function renderUS() {
+  document.getElementById('proteinuria').value = vals.proteinuria.toFixed(1);
+  document.getElementById('proteinuriaUnit').textContent = 'g/d';
+  document.getElementById('albumin').value = vals.albumin.toFixed(1);
+  document.getElementById('albuminUnit').textContent = 'g/dL';
+  document.getElementById('creatinine').value = vals.creatinine.toFixed(1);
+  document.getElementById('creatinineUnit').textContent = 'mg/dL';
+  document.getElementById('weight').value = vals.weight.toFixed(0);
+  document.getElementById('weightUnit').textContent = 'kg';
+}
+function renderSI() {
+  document.getElementById('proteinuria').value = (vals.proteinuria * 1000).toFixed(0);
+  document.getElementById('proteinuriaUnit').textContent = 'mg/d';
+  document.getElementById('albumin').value = (vals.albumin * 10).toFixed(1);
+  document.getElementById('albuminUnit').textContent = 'g/L';
+  document.getElementById('creatinine').value = (vals.creatinine * 88.4).toFixed(0);
+  document.getElementById('creatinineUnit').textContent = 'µmol/L';
+  document.getElementById('weight').value = vals.weight.toFixed(0);
+  document.getElementById('weightUnit').textContent = 'kg';
+}
+function setUnit(unit) {
+  if (unit === currentUnit) return;
+  readInputs();
+  currentUnit = unit;
+  document.getElementById('btnUS').classList.toggle('active', unit === 'US');
+  document.getElementById('btnSI').classList.toggle('active', unit === 'SI');
+  if (unit === 'US') renderUS(); else renderSI();
+  runDiagnosis();
+}
+
+/* ---------- CHECKBOX HELPER ---------- */
+function chk(id) { return document.getElementById(id).checked; }
+
+/* ---------- DOSAGE BUILDERS ---------- */
+function buildSteroidDose(weight) {
+  var low = (0.5 * weight).toFixed(0);
+  var mid = (1.0 * weight).toFixed(0);
+  var high = (2.0 * weight).toFixed(0);
+  return '<div class="dose-box"><h4>💊 First-line: High-dose glucocorticoids</h4><table>' +
+    '<tr><td>Drug</td><td>Prednisone (or prednisolone)</td></tr>' +
+    '<tr><td>Dose</td><td>~1 mg/kg/day (range 0.5–2.0 mg/kg/day)<br>→ For ' + weight + ' kg: <strong>' + low + '–' + high + ' mg/day</strong> (target ~' + mid + ' mg/day)</td></tr>' +
+    '<tr><td>Duration</td><td>Minimum 4–6 months before declaring steroid resistance (KDIGO allows up to 16 weeks at high dose), then slow taper over 4–8 weeks</td></tr>' +
+    '<tr><td>Monitoring</td><td>BP, glucose, weight, bone health, infection signs; check proteinuria &amp; albumin monthly</td></tr>' +
+    '<tr><td>Evidence</td><td>Observational in adults (no RCTs); remission strongly predicts renal survival</td></tr>' +
+    '</table></div>';
+}
+function buildCNIDose(weight) {
+  return '<div class="dose-box"><h4>💊 Alternative: Calcineurin inhibitors (CNI)</h4><table>' +
+    '<tr><td>Drug</td><td>Cyclosporine <em>or</em> Tacrolimus</td></tr>' +
+    '<tr><td>Cyclosporine dose</td><td>3–5 mg/kg/day divided BID<br>→ For ' + weight + ' kg: <strong>' + (3*weight).toFixed(0) + '–' + (5*weight).toFixed(0) + ' mg/day</strong></td></tr>' +
+    '<tr><td>Tacrolimus dose</td><td>0.05–0.1 mg/kg/day divided BID<br>→ For ' + weight + ' kg: <strong>' + (0.05*weight).toFixed(1) + '–' + (0.1*weight).toFixed(1) + ' mg/day</strong></td></tr>' +
+    '<tr><td>Target troughs</td><td>Cyclosporine: 100–200 ng/mL (whole blood)<br>Tacrolimus: 5–10 ng/mL</td></tr>' +
+    '<tr><td>Duration</td><td>Continue ≥12 months at target troughs, then slow taper (relapse on withdrawal is common)</td></tr>' +
+    '<tr><td>Indications</td><td>Steroid resistance, steroid dependence, or contraindications (obesity, diabetes, osteoporosis)</td></tr>' +
+    '<tr><td>Monitoring</td><td>Trough levels, renal function, BP, potassium, magnesium, glucose</td></tr>' +
+    '</table></div>';
+}
+function buildSecondLine() {
+  return '<div class="dose-box"><h4>💊 Second-line / refractory options (weak evidence — not formally KDIGO-endorsed)</h4><table>' +
+    '<tr><td>Mycophenolate mofetil (MMF)</td><td>500–1000 mg PO BID (target 1–2 g/day); monitor CBC, LFTs, infection</td></tr>' +
+    '<tr><td>Rituximab</td><td>375 mg/m² IV weekly × 4, <em>or</em> 1000 mg IV × 2 (2 weeks apart); premedicate with antihistamine + corticosteroid</td></tr>' +
+    '<tr><td>ACTH gel</td><td>40–80 IU IM 2×/week (evidence limited)</td></tr>' +
+    '<tr><td>Plasmapheresis / immunoadsorption / LDL apheresis</td><td>Individualized; mainly for recurrent FSGS post-transplant or refractory cases</td></tr>' +
+    '</table></div>';
+}
+function buildSupportive() {
+  return '<div class="dose-box"><h4>💊 Supportive therapy (all subtypes)</h4><table>' +
+    '<tr><td>RAAS blockade</td><td>ACEi (e.g., lisinopril 10–40 mg/day) <em>or</em> ARB (e.g., losartan 50–100 mg/day); titrate to max tolerated dose; monitor K⁺ &amp; creatinine</td></tr>' +
+    '<tr><td>Blood pressure target</td><td>&lt;120/80 mmHg (KDIGO) if tolerated</td></tr>' +
+    '<tr><td>Sodium restriction</td><td>&lt;2 g/day (≈5 g salt)</td></tr>' +
+    '<tr><td>SGLT2 inhibitor</td><td>Dapagliflozin 10 mg/day <em>or</em> empagliflozin 10 mg/day (adjunct; DAPA-CKD FSGS subgroup suggested benefit)</td></tr>' +
+    '<tr><td>Nonsteroidal MRA (emerging)</td><td>Finerenone 10–20 mg/day (titrate per eGFR/K⁺)</td></tr>' +
+    '<tr><td>Diuretics</td><td>Furosemide 20–80 mg/day as needed for edema</td></tr>' +
+    '<tr><td>Statin</td><td>For dyslipidemia / CV risk reduction</td></tr>' +
+    '<tr><td>Anticoagulation</td><td>Consider if albumin &lt;2.5 g/dL and additional VTE risk factors</td></tr>' +
+    '</table></div>';
+}
+function buildSparsentan() {
+  return '<div class="dose-box"><h4>💊 Sparsentan (Filspari) — FDA-approved for FSGS without nephrotic syndrome (≥8 yrs)</h4><table>' +
+    '<tr><td>Initiation</td><td>200 mg PO once daily for 2 weeks</td></tr>' +
+    '<tr><td>Maintenance</td><td>400 mg PO once daily</td></tr>' +
+    '<tr><td>Key warnings</td><td>Hepatotoxicity (REMS program — monthly LFTs for first 12 months, then every 3 months); embryo-fetal toxicity; hypotension; hyperkalemia</td></tr>' +
+    '<tr><td>Note</td><td>Prior nephrotic episode does not exclude; no FSGS subtype excluded by label. Studied in DUPLEX trial.</td></tr>' +
+    '</table></div>';
+}
+function buildGeneticDose() {
+  return '<div class="dose-box"><h4>💊 Genetic / APOL1-related FSGS</h4><table>' +
+    '<tr><td>Immunosuppression</td><td><strong>Not recommended</strong> — no benefit, potential harm</td></tr>' +
+    '<tr><td>Supportive care</td><td>RAAS blockade, BP control, sodium restriction, SGLT2i, statin as above</td></tr>' +
+    '<tr><td>APOL1 inhibitor (investigational)</td><td>Inaxaplin (VX-147) — oral, Phase 2b/3 (AMPLIFIED/AMPLITUDE); FDA Breakthrough Therapy; ~47.6% proteinuria reduction in Phase 2 (2 APOL1 risk variants)</td></tr>' +
+    '<tr><td>Genetic counseling</td><td>Refer for family screening and reproductive counseling</td></tr>' +
+    '</table></div>';
+}
+function buildSecondaryDose() {
+  return '<div class="dose-box"><h4>💊 Secondary / maladaptive FSGS</h4><table>' +
+    '<tr><td>Treat underlying cause</td><td>Stop offending drug (interferon, lithium, heroin, NSAIDs); treat viral infection (HIV, HCV, HBV); manage obesity/diabetes</td></tr>' +
+    '<tr><td>Immunosuppression</td><td><strong>Not recommended</strong></td></tr>' +
+    '<tr><td>Supportive care</td><td>RAAS blockade, BP control, sodium restriction, SGLT2i, statin as above</td></tr>' +
+    '<tr><td>Weight management</td><td>Consider bariatric surgery if BMI ≥40 (or ≥35 with comorbidities) in obesity-related FSGS</td></tr>' +
+    '</table></div>';
+}
+
+/* ---------- MAIN ENGINE ---------- */
+function runDiagnosis() {
+  readInputs();
+  var proteinuria = vals.proteinuria;
+  var albumin = vals.albumin;
+  var weight = vals.weight;
+
+  var diffuse = chk('footProcessDiffuse');
+  var lesions = chk('fsgsLesions');
+  var segmental = chk('segmentalEffacement');
+  var famHx = chk('familyHistory');
+  var prem = chk('prematurity');
+  var apol1 = chk('apol1');
+  var viral = chk('viralDrug');
+  var obese = chk('obesityDiabetes');
+
+  var nephroticProt = proteinuria > 3.5;
+  var hypoalb = albumin < 3.0;
+  var fullNephrotic = nephroticProt && hypoalb;
+
+  var primaryCrit = lesions && diffuse && fullNephrotic;
+  var secondaryClues = viral || obese || prem;
+  var geneticClues = famHx || apol1;
+
+  var subtype, badge, reasoning, treatmentBlocks;
+
+  if (primaryCrit && !segmental && !secondaryClues && !geneticClues) {
+    subtype = 'Primary FSGS (immune-mediated)';
+    badge = 'b-primary';
+    reasoning = 'FSGS lesions on LM + diffuse foot process effacement (≥80%) + overt nephrotic syndrome (proteinuria ' + proteinuria.toFixed(1) + ' g/d, albumin ' + albumin.toFixed(1) + ' g/dL). No secondary or genetic clues.';
+    treatmentBlocks = buildSteroidDose(weight) + buildCNIDose(weight) + buildSecondLine() + buildSupportive();
+  } else if (geneticClues && !fullNephrotic && !segmental) {
+    subtype = 'Genetic / APOL1-related FSGS';
+    badge = 'b-genetic';
+    reasoning = 'Family history and/or APOL1 high-risk variants. Often sub-nephrotic proteinuria (' + proteinuria.toFixed(1) + ' g/d) with preserved albumin (' + albumin.toFixed(1) + ' g/dL).';
+    treatmentBlocks = buildGeneticDose() + buildSupportive();
+  } else if (secondaryClues) {
+    subtype = 'Secondary (maladaptive / viral / drug-induced) FSGS';
+    badge = 'b-secondary';
+    reasoning = 'Secondary etiologic factors present (' + (viral?'viral/drug exposure, ':'') + (obese?'obesity/diabetes, ':'') + (prem?'prematurity, ':'') + '). Often sub-nephrotic proteinuria (' + proteinuria.toFixed(1) + ' g/d) with preserved albumin (' + albumin.toFixed(1) + ' g/dL).';
+    treatmentBlocks = buildSecondaryDose() + buildSupportive();
+  } else if (segmental && !diffuse) {
+    subtype = 'Secondary / Genetic / FSGS-UC';
+    badge = 'b-uc';
+    reasoning = 'Segmental foot process effacement (not diffuse) and/or sub-nephrotic proteinuria (' + proteinuria.toFixed(1) + ' g/d). Favors secondary, genetic, or undetermined cause.';
+    treatmentBlocks = buildSecondaryDose() + buildGeneticDose() + buildSupportive();
+  } else if (fullNephrotic && !diffuse) {
+    subtype = 'FSGS of undetermined cause (FSGS-UC) / secondary';
+    badge = 'b-uc';
+    reasoning = 'Nephrotic-range proteinuria (' + proteinuria.toFixed(1) + ' g/d) but lacking diffuse foot process effacement — does not meet full primary criteria.';
+    treatmentBlocks = buildSecondaryDose() + buildSupportive();
+  } else {
+    subtype = 'FSGS of undetermined cause (FSGS-UC) / Mixed features';
+    badge = 'b-uc';
+    reasoning = 'Mixed/incomplete features: proteinuria ' + proteinuria.toFixed(1) + ' g/d, albumin ' + albumin.toFixed(1) + ' g/dL, diffuse effacement: ' + (diffuse?'yes':'no') + ', FSGS lesions: ' + (lesions?'yes':'no') + '.';
+    treatmentBlocks = buildSupportive() + '<div class="warn">Consider immunosuppression only if primary FSGS is strongly suspected (full nephrotic + diffuse effacement + no secondary/genetic clues).</div>';
+  }
+
+  var nephNote = fullNephrotic
+    ? '✅ Overt nephrotic syndrome (proteinuria &gt;3.5 g/d + albumin &lt;3.0 g/dL).'
+    : '⚠️ Does not meet full nephrotic syndrome criteria (proteinuria ≤3.5 g/d or albumin ≥3.0 g/dL).';
+
+  var spar = (!fullNephrotic && proteinuria > 1.0) ? buildSparsentan() : '';
+
+  var html = '<div class="badge ' + badge + '">' + subtype + '</div>' +
+    '<div class="txt">' +
+    '<p><strong>Diagnostic reasoning:</strong> ' + reasoning + '</p>' +
+    '<p style="margin-top:10px;"><strong>Nephrotic status:</strong> ' + nephNote + '</p>' +
+    '<p style="margin-top:14px;"><strong>Suggested management &amp; dosage schedules:</strong></p>' +
+    treatmentBlocks +
+    spar +
+    '<div class="warn">⚠️ Categories overlap — reclassify as more data (genetics, biopsy, clinical course) emerge. All doses are starting guides; adjust per renal function, comorbidities, and local protocols.</div>' +
+    '</div>';
+
+  document.getElementById('placeholder').classList.add('hidden');
+  var out = document.getElementById('output');
+  out.classList.remove('hidden');
+  out.innerHTML = html;
+
+  // Timestamp to confirm button fired
+  document.getElementById('stamp').textContent = 'Updated: ' + new Date().toLocaleTimeString();
+}
+
+/* ---------- INIT ---------- */
+window.onload = function() {
+  renderUS();
+  runDiagnosis();
+};
+</script>
+</body>
+</html>
